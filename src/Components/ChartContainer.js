@@ -1,54 +1,71 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Line } from "react-chartjs-2";
 import "./ChartContainer.css";
 
 const ChartContainer = () => {
   const [lineData, setLineData] = useState([]);
+  const cryptoInputRef = useRef();
 
-  useEffect(() => {
-    fetch("https://api.coingecko.com/api/v3/coins/shiba-inu/market_chart?vs_currency=usd&days=30", {
-      headers: {
-        "Content-Type": "application/json",
-      },
-    })
-      .then((res) => res.json())
-      .then((data) => {
-        const cryptoArray = data.prices;
-        const cryptoPercentChange = [];
+  // useEffect(() => {
+  //   //----- LIST OF CRYPTOS -----//
 
-        cryptoArray.forEach((data) => {
-          cryptoPercentChange.push(data[1] / cryptoArray[0][1] -1);
-        });
+  //   fetch("https://api.coingecko.com/api/v3/coins/list")
+  //     .then((res) => res.json())
+  //     .then((data) => console.log(data.map((index) => index.symbol)));
+  // }, [lineData]);
 
-        setLineData({
-          labels: cryptoArray.map((data, index) => {
-            return index;
-          }),
-          datasets: [
-            {
-              // data: cryptoLast30Days.map((day) => {
-              //   return day.priceUsd;
-              // }),
-              data: cryptoPercentChange
-            },
-          ],
-        });
-      })
+  const createDataSet = async (coinName) => {
+    const response = await fetch(
+      `https://api.coingecko.com/api/v3/coins/${coinName}/market_chart?vs_currency=usd&days=30`,
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      }
+    );
+    const data = await response.json();
 
-      .catch((err) => console.log(err));
+    if (data) {
+      const cryptoArray = data.prices;
+      const cryptoPercentChange = [];
 
-    //----- LIST OF CRYPTOS -----//
+      cryptoArray.forEach((data) => {
+        cryptoPercentChange.push(data[1] / cryptoArray[0][1] - 1);
+      });
+      console.log(coinName, cryptoPercentChange);
+      return {
+        label: coinName,
+        data: cryptoPercentChange,
+      };
+    }
+  };
 
-    fetch("https://api.coingecko.com/api/v3/coins/list")
-      .then((res) => res.json())
-      .then((data) =>
-        console.log(data.map((index) => index.symbol))
-      );
-  }, []);
+  const addLineHandler = () => {
+    createDataSet(cryptoInputRef.current.value).then((coin) => {
+      if (coin) {
+        console.log(coin);
+        setLineData([...lineData, coin]);
+      }
+    });
+  };
 
   return (
     <div className="chart-container">
-      <Line data={lineData} />
+      <div style={{ display: "flex" }}>
+        <input type="text" ref={cryptoInputRef} />
+        <button onClick={addLineHandler}>Add</button>
+      </div>
+      <Line
+        //--- labels property is some bs placeholder for x-axis ---//
+        data={
+          lineData[0] && {
+            labels: lineData[0].data.map((data, index) => {
+              return index;
+            }),
+            datasets: lineData,
+          }
+        }
+      />
     </div>
   );
 };
