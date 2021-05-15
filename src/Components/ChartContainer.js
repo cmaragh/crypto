@@ -24,18 +24,20 @@ const ChartContainer = () => {
       }
     );
     const data = await response.json();
-
-    if (data) {
+    console.log(data);
+    if (typeof data !== undefined) {
       const cryptoArray = data.prices;
       const cryptoPercentChange = [];
 
       cryptoArray.forEach((data) => {
-        cryptoPercentChange.push(data[1] / cryptoArray[0][1] - 1);
+        cryptoPercentChange.push(Math.log(data[1] / cryptoArray[0][1]));
       });
       console.log(coinName, cryptoPercentChange);
       return {
         label: coinName,
         data: cryptoPercentChange,
+        backgroundColor: `#${Math.floor(Math.random()*16777215).toString(16)}`
+
       };
     }
   };
